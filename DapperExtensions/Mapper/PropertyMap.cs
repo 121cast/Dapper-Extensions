@@ -14,6 +14,7 @@ namespace DapperExtensions.Mapper
         string ColumnName { get; }
         bool Ignored { get; }
         bool IsReadOnly { get; }
+		bool IsInsertOnly { get; }
         KeyType KeyType { get; }
         PropertyInfo PropertyInfo { get; }
     }
@@ -56,6 +57,11 @@ namespace DapperExtensions.Mapper
         /// Gets the read-only status of the current property. If read-only, the current property will not be included in INSERT and UPDATE queries.
         /// </summary>
         public bool IsReadOnly { get; private set; }
+
+		/// <summary>
+		/// Gets the insert-only status of the current property. If insert-only, the current property is only included in INSERT queries.
+		/// </summary>
+		public bool IsInsertOnly { get; private set; }
 
         /// <summary>
         /// Gets the property info for the current property.
@@ -119,6 +125,15 @@ namespace DapperExtensions.Mapper
             IsReadOnly = true;
             return this;
         }
+
+		/// <summary>
+		/// Fluently sets the insert-only status of the property.
+		/// </summary>
+		public PropertyMap InsertOnly()
+		{
+			IsInsertOnly = true;
+			return this;
+		}
     }
 
     /// <summary>

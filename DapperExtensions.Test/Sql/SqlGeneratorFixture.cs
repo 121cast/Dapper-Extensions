@@ -478,6 +478,35 @@ namespace DapperExtensions.Test.Sql
                 Generator.Verify();
                 Generator.Verify(g => g.GetColumnName(ClassMap.Object, property1.Object, false), Times.Never());
             }
+
+	        [Test]
+	        public void DoesGenerateInsertOnlyColumns()
+	        {
+		        Mock<IPropertyMap> property = new Mock<IPropertyMap>();
+		        property.Setup(p => p.IsInsertOnly).Returns(true);
+		        property.Setup(p => p.KeyType).Returns(KeyType.NotAKey).Verifiable();
+		        property.Setup(p => p.Name).Returns("Name").Verifiable();
+
+		        List<IPropertyMap> properties = new List<IPropertyMap>
+		        {
+			        property.Object
+		        };
+
+		        ClassMap.SetupGet(c => c.Properties).Returns(properties).Verifiable();
+
+		        Generator.Setup(g => g.GetColumnName(ClassMap.Object, property.Object, false)).Returns("Column").Verifiable();
+		        Generator.Setup(g => g.GetTableName(ClassMap.Object)).Returns("TableName").Verifiable();
+
+		        Dialect.SetupGet(d => d.SupportsMultipleStatements).Returns(false).Verifiable();
+
+		        var result = Generator.Object.Insert(ClassMap.Object);
+		        Assert.AreEqual("INSERT INTO TableName (Column) VALUES (@Name)", result);
+
+		        ClassMap.Verify();
+		        property.Verify();
+
+		        Generator.Verify();
+	        }
         }
 
         [TestFixture]
@@ -650,6 +679,47 @@ namespace DapperExtensions.Test.Sql
                 Generator.Verify();
                 Generator.Verify(g => g.GetColumnName(ClassMap.Object, property1.Object, false), Times.Never());
             }
+
+			[Test]
+			public void DoesNotGenerateInsertOnlyColumns()
+			{
+				Mock<IPropertyMap> property1 = new Mock<IPropertyMap>();
+				property1.Setup(p => p.IsInsertOnly).Returns(true).Verifiable();
+
+				Mock<IPropertyMap> property2 = new Mock<IPropertyMap>();
+				property2.Setup(p => p.KeyType).Returns(KeyType.NotAKey).Verifiable();
+				property2.Setup(p => p.Name).Returns("Name").Verifiable();
+
+				List<IPropertyMap> properties = new List<IPropertyMap>
+                                                    {
+                                                        property1.Object,
+                                                        property2.Object
+                                                    };
+
+				ClassMap.SetupGet(c => c.Properties).Returns(properties).Verifiable();
+
+				Generator.Setup(g => g.GetColumnName(ClassMap.Object, property2.Object, false)).Returns("Column").Verifiable();
+				Generator.Setup(g => g.GetTableName(ClassMap.Object)).Returns("TableName").Verifiable();
+
+				Dialect.SetupGet(d => d.SupportsMultipleStatements).Returns(false).Verifiable();
+
+				Mock<IPredicate> predicate = new Mock<IPredicate>();
+				Dictionary<string, object> parameters = new Dictionary<string, object>();
+				predicate.Setup(p => p.GetSql(Generator.Object, parameters)).Returns("Predicate").Verifiable();
+
+				var result = Generator.Object.Update(ClassMap.Object, predicate.Object, parameters);
+
+				Assert.AreEqual("UPDATE TableName SET Column = @Name WHERE Predicate", result);
+
+				predicate.Verify();
+				ClassMap.Verify();
+				property1.Verify();
+				property1.VerifyGet(p => p.Name, Times.Never());
+				property2.Verify();
+
+				Generator.Verify();
+				Generator.Verify(g => g.GetColumnName(ClassMap.Object, property1.Object, false), Times.Never());
+			}
         }
 
         [TestFixture]

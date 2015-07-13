@@ -168,7 +168,7 @@ namespace DapperExtensions.Sql
                 throw new ArgumentNullException("Parameters");
             }
 
-            var columns = classMap.Properties.Where(p => !(p.Ignored || p.IsReadOnly || p.KeyType == KeyType.Identity));
+            var columns = classMap.Properties.Where(p => !(p.Ignored || p.IsReadOnly || p.IsInsertOnly || p.KeyType == KeyType.Identity));
             if (!columns.Any())
             {
                 throw new ArgumentException("No columns were mapped.");
